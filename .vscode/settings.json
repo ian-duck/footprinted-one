@@ -1,0 +1,10 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python3 scripts/convert_atlas_to_geojson\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "mkdir": true,
+        "mv": true
+    }
+}

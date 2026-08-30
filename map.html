@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas SK Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        width: 100%;
+        height: 100vh;
+      }
+        #statsChart {
+          width: 200px;
+          height: 200px;
+          display: block;
+          margin: 0 auto 1rem auto;
+        }
+      .leaflet-popup-content-wrapper,
+      .leaflet-popup-content {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="mapContainer">
+      <div id="map"></div>
+    </div>
+
+    <div id="statsContainer" style="display:none; padding: 1rem; position: relative;">
+      <button id="mapButton" style="position: absolute; top: 10px; right: 10px; padding: 6px 10px; font-size: 14px; border-radius:6px;">Map</button>
+      <h2>Dataset Statistics</h2>
+      <canvas id="statsChart" width="200" height="200" aria-label="Pie chart of Date presence"></canvas>
+      <p id="statsSummary"></p>
+    </div>
+
+    <button id="viewToggle" title="Toggle Map / Stats" style="position: absolute; top: 10px; right: 10px; z-index:1000;">Stats</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const map = L.map("map").setView([48.7, 19.7], 7);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      function hasDate(feature) {
+        const dateValue = feature?.properties?.Date;
+        return typeof dateValue === "string" && dateValue.trim() !== "";
+      }
+
+      let geoLayer;
+      let currentCenter = map.getCenter();
+      let currentZoom = map.getZoom();
+      let statsChart = null;
+
+      function computeStats(geojson) {
+        const features = geojson.features || [];
+        let withDate = 0;
+        let withoutDate = 0;
+        for (const f of features) {
+          if (hasDate(f)) withDate++; else withoutDate++;
+        }
+        return {withDate, withoutDate};
+      }
+
+      function renderChart(stats) {
+        const ctx = document.getElementById('statsChart');
+        const total = stats.withDate + stats.withoutDate;
+        const data = {
+          labels: ['Has Date', 'No Date'],
+          datasets: [{
+            data: [stats.withDate, stats.withoutDate],
+            backgroundColor: ['#2ecc71', '#e74c3c']
+          }]
+        };
+
+        if (statsChart) {
+          statsChart.data = data;
+          statsChart.update();
+          return;
+        }
+
+        try {
+          const canvas = document.getElementById('statsChart');
+          const ctx2d = canvas.getContext ? canvas.getContext('2d') : ctx;
+          statsChart = new Chart(ctx2d, {
+            type: 'pie',
+            data: data,
+            options: { responsive: true, maintainAspectRatio: false }
+          });
+        } catch (e) {
+          console.error('Chart init failed', e);
+          document.getElementById('statsSummary').textContent = `With Date: ${stats.withDate} / ${total} (${((stats.withDate/total)*100||0).toFixed(1)}%), No Date: ${stats.withoutDate} / ${total}`;
+        }
+      }
+
+      function showStatsView(geojson) {
+        const stats = computeStats(geojson);
+        document.getElementById('mapContainer').style.display = 'none';
+        document.getElementById('statsContainer').style.display = 'block';
+        document.getElementById('viewToggle').textContent = 'Map';
+        renderChart(stats);
+        document.getElementById('statsSummary').textContent = `With Date: ${stats.withDate}, No Date: ${stats.withoutDate} (${((stats.withDate/(stats.withDate+stats.withoutDate))*100||0).toFixed(1)}%)`;
+      }
+
+      function showMapView() {
+        document.getElementById('statsContainer').style.display = 'none';
+        document.getElementById('mapContainer').style.display = 'block';
+        document.getElementById('viewToggle').textContent = 'Stats';
+        map.invalidateSize();
+        if (currentCenter) map.setView(currentCenter, currentZoom);
+      }
+
+      document.getElementById('viewToggle').addEventListener('click', () => {
+        // toggle
+        if (document.getElementById('statsContainer').style.display === 'block') {
+          showMapView();
+        } else {
+          // save map state
+          currentCenter = map.getCenter();
+          currentZoom = map.getZoom();
+          // if we have geoLayer data on window, call showStatsView with its geojson
+          if (window.__loadedGeoJSON) {
+            showStatsView(window.__loadedGeoJSON);
+          } else {
+            // fetch and compute
+            fetch('atlas_sk.geojson').then(r=>r.json()).then(g=>{ window.__loadedGeoJSON = g; showStatsView(g); }).catch(e=>{ console.error(e); alert('Could not load GeoJSON for stats.'); });
+          }
+        }
+      });
+
+      document.getElementById('mapButton').addEventListener('click', showMapView);
+
+      fetch('atlas_sk.geojson')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Failed to load GeoJSON: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((geojson) => {
+          window.__loadedGeoJSON = geojson;
+          geoLayer = L.geoJSON(geojson, {
+            pointToLayer: function (feature, latlng) {
+              const color = hasDate(feature) ? '#2ecc71' : '#e74c3c';
+              return L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 1, fillColor: color, fillOpacity: 0.95 });
+            },
+            onEachFeature: function (feature, layerItem) {
+              const props = feature.properties || {};
+              const place = props.Place || 'Unknown place';
+              const date = props.Date && String(props.Date).trim() !== '' ? props.Date : 'No date';
+              const region = props.Region || 'N/A';
+              const sector = props.Sector || 'N/A';
+              layerItem.bindPopup(`<strong>${place}</strong><br>Date: ${date}<br>Region: ${region}<br>Sector: ${sector}`);
+            }
+          }).addTo(map);
+
+          try { map.fitBounds(geoLayer.getBounds()); } catch (e) { console.warn('fitBounds failed', e); }
+        })
+        .catch((error) => {
+          console.error(error);
+          alert('Could not load the GeoJSON file.');
+        });
+    </script>
+  </body>
+</html>
