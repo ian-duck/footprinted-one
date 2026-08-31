@@ -27,12 +27,6 @@
         display: block;
         margin: 0 0 1rem 0;
       }
-      #regionalStats { margin-top: 1rem; overflow-x: auto; }
-      #regionalStats table { width: auto; max-width: 100%; border-collapse: collapse; table-layout: auto; }
-      #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; white-space: nowrap; }
-      #regionalStats th, #regionalStats td { color: #000; }
-      .region-row { font-weight: bold; background: #f8f8f8; }
-      .district-row td:first-child { padding-left: 1rem; }
       .leaflet-popup-content-wrapper,
       .leaflet-popup-content {
         font-size: 13px;
@@ -48,7 +42,6 @@
     <div id="statsContainer">
       <h4>Statistics</h4>
       <canvas id="statsChart" width="200" height="200" aria-label="Doughnut chart of Date presence"></canvas>
-      <div id="regionalStats" aria-live="polite" aria-label="Regional statistics table"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -129,101 +122,6 @@
         }
       }
 
-      function computeRegionalStats(features) {
-        const regionsMap = new Map();
-        for (const f of features) {
-          const props = f.properties || {};
-          const region = props.Region || 'Unknown';
-          const district = props.RegionDistrict || 'Unknown';
-          const has = hasDate(f);
-
-          if (!regionsMap.has(region)) {
-            regionsMap.set(region, { name: region, total: 0, withDate: 0, withoutDate: 0, districts: new Map() });
-          }
-          const r = regionsMap.get(region);
-          r.total += 1;
-          if (has) r.withDate += 1; else r.withoutDate += 1;
-
-          if (!r.districts.has(district)) {
-            r.districts.set(district, { name: district, total: 0, withDate: 0, withoutDate: 0 });
-          }
-          const d = r.districts.get(district);
-          d.total += 1;
-          if (has) d.withDate += 1; else d.withoutDate += 1;
-        }
-
-        const regions = Array.from(regionsMap.values()).map(r => {
-          const districts = Array.from(r.districts.values()).map(d => ({ name: d.name, total: d.total, withDate: d.withDate, withoutDate: d.withoutDate }));
-          districts.sort((a, b) => a.name.localeCompare(b.name));
-          return { name: r.name, total: r.total, withDate: r.withDate, withoutDate: r.withoutDate, districts };
-        });
-        regions.sort((a, b) => a.name.localeCompare(b.name));
-        return regions;
-      }
-
-      function renderRegionalStatsTable(regions, container) {
-        if (!container) return;
-        container.innerHTML = '';
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Name</th><th>% with Date</th><th># without Date</th></tr>';
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        // Build a flat list of rows with numeric percentages so we can compute
-        // min/max across all rows (regions + districts) for gradient coloring.
-        const rows = [];
-        for (const region of regions) {
-          const pct = region.total ? (region.withDate / region.total * 100) : 0;
-          rows.push({ type: 'region', name: region.name, pct, withDate: region.withDate, withoutDate: region.withoutDate, region });
-          for (const district of region.districts) {
-            const dpct = district.total ? (district.withDate / district.total * 100) : 0;
-            rows.push({ type: 'district', name: district.name, pct: dpct, withDate: district.withDate, withoutDate: district.withoutDate, district });
-          }
-        }
-
-        // Determine min/max percentage
-        const pctValues = rows.map(r => r.pct);
-        const minPct = Math.min(...pctValues);
-        const maxPct = Math.max(...pctValues);
-
-        // Helper: interpolate between red and green
-        function lerp(a, b, t) { return a + (b - a) * t; }
-        function interpColor(t) {
-          // red: #e74c3c (231,76,60), green: #2ecc71 (46,204,113)
-          const r1 = 231, g1 = 76, b1 = 60;
-          const r2 = 46, g2 = 204, b2 = 113;
-          const r = Math.round(lerp(r1, r2, t));
-          const g = Math.round(lerp(g1, g2, t));
-          const b = Math.round(lerp(b1, b2, t));
-          return { r, g, b };
-        }
-        function rgbToCss(c, a) { return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`; }
-        // text will be black for readability
-        function getTextColorForBg(c) { return '#000'; }
-
-        // Now render rows with colors
-        for (const r of rows) {
-          const displayPct = r.pct.toFixed(1);
-          const tr = document.createElement('tr');
-          tr.className = r.type === 'region' ? 'region-row' : 'district-row';
-          const nameTd = document.createElement('td'); nameTd.textContent = r.name; tr.appendChild(nameTd);
-          const pctTd = document.createElement('td'); pctTd.textContent = `${displayPct}%`; tr.appendChild(pctTd);
-          const withoutTd = document.createElement('td'); withoutTd.textContent = r.withoutDate; tr.appendChild(withoutTd);
-
-          // Normalize t in [0,1] where 0 -> min (red), 1 -> max (green)
-          const t = (maxPct - minPct) === 0 ? 1 : ((r.pct - minPct) / (maxPct - minPct));
-          const col = interpColor(t);
-          // use stronger alpha for better contrast and force black text
-          tr.style.backgroundColor = rgbToCss(col, 0.32);
-          tr.style.color = '#000';
-
-          tbody.appendChild(tr);
-        }
-
-        table.appendChild(tbody);
-        container.appendChild(table);
-      }
-
       // Render stats below the map; no toggle. Chart will be initialized after GeoJSON is loaded.
 
       fetch('atlas_sk.geojson')
@@ -256,13 +154,6 @@
             renderChart(stats);
           } catch (e) {
             console.error('Stats render failed', e);
-          }
-
-          try {
-            const regions = computeRegionalStats(geojson.features || []);
-            renderRegionalStatsTable(regions, document.getElementById('regionalStats'));
-          } catch (e) {
-            console.error('Regional stats render failed', e);
           }
 
           try { map.fitBounds(geoLayer.getBounds()); } catch (e) { console.warn('fitBounds failed', e); }
