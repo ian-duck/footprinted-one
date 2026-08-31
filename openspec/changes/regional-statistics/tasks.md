@@ -24,5 +24,5 @@
 
 ## 4. Release
 
-- [ ] 4.1 Commit changes and update project changelog
+- [x] 4.1 Commit changes and update project changelog
 - [ ] 4.2 Optional: add a short note in README about the new stats view
