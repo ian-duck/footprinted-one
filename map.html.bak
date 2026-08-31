@@ -27,11 +27,6 @@
         display: block;
         margin: 0 0 1rem 0;
       }
-      #regionalStats { margin-top: 1rem; overflow-x: auto; }
-      #regionalStats table { width: 100%; border-collapse: collapse; }
-      #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; }
-      .region-row { font-weight: bold; background: #f8f8f8; }
-      .district-row td:first-child { padding-left: 1rem; }
       .leaflet-popup-content-wrapper,
       .leaflet-popup-content {
         font-size: 13px;
@@ -47,7 +42,6 @@
     <div id="statsContainer">
       <h4>Statistics</h4>
       <canvas id="statsChart" width="200" height="200" aria-label="Doughnut chart of Date presence"></canvas>
-      <div id="regionalStats" aria-live="polite" aria-label="Regional statistics table"></div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -128,70 +122,6 @@
         }
       }
 
-      function computeRegionalStats(features) {
-        const regionsMap = new Map();
-        for (const f of features) {
-          const props = f.properties || {};
-          const region = props.Region || 'Unknown';
-          const district = props.RegionDistrict || 'Unknown';
-          const has = hasDate(f);
-
-          if (!regionsMap.has(region)) {
-            regionsMap.set(region, { name: region, total: 0, withDate: 0, withoutDate: 0, districts: new Map() });
-          }
-          const r = regionsMap.get(region);
-          r.total += 1;
-          if (has) r.withDate += 1; else r.withoutDate += 1;
-
-          if (!r.districts.has(district)) {
-            r.districts.set(district, { name: district, total: 0, withDate: 0, withoutDate: 0 });
-          }
-          const d = r.districts.get(district);
-          d.total += 1;
-          if (has) d.withDate += 1; else d.withoutDate += 1;
-        }
-
-        const regions = Array.from(regionsMap.values()).map(r => {
-          const districts = Array.from(r.districts.values()).map(d => ({ name: d.name, total: d.total, withDate: d.withDate, withoutDate: d.withoutDate }));
-          districts.sort((a, b) => a.name.localeCompare(b.name));
-          return { name: r.name, total: r.total, withDate: r.withDate, withoutDate: r.withoutDate, districts };
-        });
-        regions.sort((a, b) => a.name.localeCompare(b.name));
-        return regions;
-      }
-
-      function renderRegionalStatsTable(regions, container) {
-        if (!container) return;
-        container.innerHTML = '';
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Name</th><th>% with Date</th><th># without Date</th></tr>';
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-
-        for (const region of regions) {
-          const pct = region.total ? (region.withDate / region.total * 100).toFixed(1) : '0.0';
-          const regionRow = document.createElement('tr');
-          regionRow.className = 'region-row';
-          const nameTd = document.createElement('td'); nameTd.textContent = region.name; regionRow.appendChild(nameTd);
-          const pctTd = document.createElement('td'); pctTd.textContent = `${pct}% — ${region.withDate}`; regionRow.appendChild(pctTd);
-          const withoutTd = document.createElement('td'); withoutTd.textContent = region.withoutDate; regionRow.appendChild(withoutTd);
-          tbody.appendChild(regionRow);
-
-          for (const district of region.districts) {
-            const dpct = district.total ? (district.withDate / district.total * 100).toFixed(1) : '0.0';
-            const dRow = document.createElement('tr'); dRow.className = 'district-row';
-            const dName = document.createElement('td'); dName.textContent = district.name; dRow.appendChild(dName);
-            const dPct = document.createElement('td'); dPct.textContent = `${dpct}% — ${district.withDate}`; dRow.appendChild(dPct);
-            const dWithout = document.createElement('td'); dWithout.textContent = district.withoutDate; dRow.appendChild(dWithout);
-            tbody.appendChild(dRow);
-          }
-        }
-
-        table.appendChild(tbody);
-        container.appendChild(table);
-      }
-
       // Render stats below the map; no toggle. Chart will be initialized after GeoJSON is loaded.
 
       fetch('atlas_sk.geojson')
@@ -224,13 +154,6 @@
             renderChart(stats);
           } catch (e) {
             console.error('Stats render failed', e);
-          }
-
-          try {
-            const regions = computeRegionalStats(geojson.features || []);
-            renderRegionalStatsTable(regions, document.getElementById('regionalStats'));
-          } catch (e) {
-            console.error('Regional stats render failed', e);
           }
 
           try { map.fitBounds(geoLayer.getBounds()); } catch (e) { console.warn('fitBounds failed', e); }
