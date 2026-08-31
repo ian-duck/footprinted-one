@@ -1,30 +1,31 @@
 ## MODIFIED Requirements
 
-### Requirement: Add view toggle between map and statistics
-The existing Leaflet map view SHALL provide a UI control to toggle between the interactive map and a statistic summary view. The toggle SHALL not remove or alter existing marker behavior when switching views.
+### Requirement: Display statistics below the map view
+The Leaflet map view SHALL display a statistics summary below the interactive map on the same page. The statistics SHALL be visible simultaneously with the map and shall not obscure or overlay map controls or markers.
 
-#### Scenario: Toggle shows statistics
-- **WHEN** a user activates the toggle to show statistics
-- **THEN** the map view is hidden and the statistics view is shown
-- **THEN** the statistics view displays a pie chart and a textual summary of counts
+#### Scenario: Stats shown below map
+- **WHEN** the map page loads
+- **THEN** a statistics section is rendered directly below the map container
+- **THEN** the map remains interactive and existing marker behavior is unchanged
 
 ### Requirement: Provide percent summary of `Date` presence
-The system SHALL compute and present the counts and percentages of features with defined `properties.Date` and those with empty or missing `Date` values. The percentages SHALL be calculated as (count / total) * 100 and displayed with one decimal place.
+The system SHALL compute and present the counts and percentages of features with defined `properties.Date` and those with empty or missing `Date` values. The percentages SHALL be calculated as (count / total) * 100 and displayed with one decimal place. The statistics shall include both nominal counts and percentage labels.
 
 #### Scenario: Percent calculation is correct
 - **WHEN** the GeoJSON dataset contains N features
-- **THEN** the statistics view shows counts and percentages that sum to N and 100.0% respectively (within rounding tolerance)
+- **THEN** the statistics section shows counts and percentages that sum to N and 100.0% respectively (within rounding tolerance)
 
 ### Requirement: Visual consistency with map markers
 The statistics chart color mapping SHALL match the marker colors used in the map (green for defined `Date`, red for missing/empty `Date`) to avoid confusion.
 
 #### Scenario: Chart colors match markers
 - **WHEN** the map renders markers with green/red fills
-- **THEN** the pie chart uses the same green and red colors for corresponding slices
+- **THEN** the doughnut chart uses the same green and red colors for corresponding slices
 
-### Requirement: Preserve map state when returning to map view
-When returning from the statistics view to the map view, the map SHALL preserve the previous center and zoom (or restore them to the last known state) and render markers without re-fetching the GeoJSON.
+### Requirement: Overall statistic display details
+The overall statistic for `Date` presence SHALL be shown as a doughnut chart (not a pie chart). The doughnut chart SHALL be 200px by 200px. Chart labels SHALL include both the percentage (displayed with one decimal place) and the nominal count together for each slice (for example: "72.3% — 231").
 
-#### Scenario: Returning to map restores view
-- **WHEN** a user switches to statistics and then back to the map
-- **THEN** the map shows the same visible area (center/zoom) as before switching
+#### Scenario: Doughnut rendering
+- **WHEN** statistics are computed
+- **THEN** the doughnut chart is rendered at 200px × 200px below the map
+- **THEN** each slice label shows percentage and nominal count formatted as "{P}% — {N}"

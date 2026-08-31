@@ -47842,8 +47842,8 @@
         "Sector": "D",
         "CountryCode": "SK",
         "Year": 1899,
-        "Latitude": 49.4189359,
-        "Longitude": 18.6238075,
+        "Latitude": 49.4748653,
+        "Longitude": 18.5630172,
         "Country": "Slovensko",
         "Region": "Žilinský kraj",
         "RegionDistrict": "okres Čadca",
@@ -47852,8 +47852,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          18.6238075,
-          49.4189359
+          18.5630172,
+          49.4748653
         ]
       }
     },
