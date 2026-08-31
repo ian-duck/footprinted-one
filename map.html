@@ -28,8 +28,9 @@
         margin: 0 0 1rem 0;
       }
       #regionalStats { margin-top: 1rem; overflow-x: auto; }
-      #regionalStats table { width: 100%; border-collapse: collapse; }
-      #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; }
+      #regionalStats table { width: auto; max-width: 100%; border-collapse: collapse; table-layout: auto; }
+      #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; white-space: nowrap; }
+      #regionalStats th, #regionalStats td { color: #000; }
       .region-row { font-weight: bold; background: #f8f8f8; }
       .district-row td:first-child { padding-left: 1rem; }
       .leaflet-popup-content-wrapper,
@@ -197,11 +198,8 @@
           return { r, g, b };
         }
         function rgbToCss(c, a) { return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`; }
-        function getTextColorForBg(c) {
-          // Perceived luminance
-          const luminance = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
-          return luminance > 0.6 ? '#000' : '#fff';
-        }
+        // text will be black for readability
+        function getTextColorForBg(c) { return '#000'; }
 
         // Now render rows with colors
         for (const r of rows) {
@@ -209,16 +207,15 @@
           const tr = document.createElement('tr');
           tr.className = r.type === 'region' ? 'region-row' : 'district-row';
           const nameTd = document.createElement('td'); nameTd.textContent = r.name; tr.appendChild(nameTd);
-          const pctTd = document.createElement('td'); pctTd.textContent = `${displayPct}% — ${r.withDate}`; tr.appendChild(pctTd);
+          const pctTd = document.createElement('td'); pctTd.textContent = `${displayPct}%`; tr.appendChild(pctTd);
           const withoutTd = document.createElement('td'); withoutTd.textContent = r.withoutDate; tr.appendChild(withoutTd);
 
           // Normalize t in [0,1] where 0 -> min (red), 1 -> max (green)
           const t = (maxPct - minPct) === 0 ? 1 : ((r.pct - minPct) / (maxPct - minPct));
           const col = interpColor(t);
-          // use a light alpha for background so table remains readable
-          tr.style.backgroundColor = rgbToCss(col, 0.18);
-          const textColor = getTextColorForBg(col);
-          tr.style.color = textColor;
+          // use stronger alpha for better contrast and force black text
+          tr.style.backgroundColor = rgbToCss(col, 0.32);
+          tr.style.color = '#000';
 
           tbody.appendChild(tr);
         }
