@@ -168,24 +168,59 @@
         thead.innerHTML = '<tr><th>Name</th><th>% with Date</th><th># without Date</th></tr>';
         table.appendChild(thead);
         const tbody = document.createElement('tbody');
-
+        // Build a flat list of rows with numeric percentages so we can compute
+        // min/max across all rows (regions + districts) for gradient coloring.
+        const rows = [];
         for (const region of regions) {
-          const pct = region.total ? (region.withDate / region.total * 100).toFixed(1) : '0.0';
-          const regionRow = document.createElement('tr');
-          regionRow.className = 'region-row';
-          const nameTd = document.createElement('td'); nameTd.textContent = region.name; regionRow.appendChild(nameTd);
-          const pctTd = document.createElement('td'); pctTd.textContent = `${pct}% — ${region.withDate}`; regionRow.appendChild(pctTd);
-          const withoutTd = document.createElement('td'); withoutTd.textContent = region.withoutDate; regionRow.appendChild(withoutTd);
-          tbody.appendChild(regionRow);
-
+          const pct = region.total ? (region.withDate / region.total * 100) : 0;
+          rows.push({ type: 'region', name: region.name, pct, withDate: region.withDate, withoutDate: region.withoutDate, region });
           for (const district of region.districts) {
-            const dpct = district.total ? (district.withDate / district.total * 100).toFixed(1) : '0.0';
-            const dRow = document.createElement('tr'); dRow.className = 'district-row';
-            const dName = document.createElement('td'); dName.textContent = district.name; dRow.appendChild(dName);
-            const dPct = document.createElement('td'); dPct.textContent = `${dpct}% — ${district.withDate}`; dRow.appendChild(dPct);
-            const dWithout = document.createElement('td'); dWithout.textContent = district.withoutDate; dRow.appendChild(dWithout);
-            tbody.appendChild(dRow);
+            const dpct = district.total ? (district.withDate / district.total * 100) : 0;
+            rows.push({ type: 'district', name: district.name, pct: dpct, withDate: district.withDate, withoutDate: district.withoutDate, district });
           }
+        }
+
+        // Determine min/max percentage
+        const pctValues = rows.map(r => r.pct);
+        const minPct = Math.min(...pctValues);
+        const maxPct = Math.max(...pctValues);
+
+        // Helper: interpolate between red and green
+        function lerp(a, b, t) { return a + (b - a) * t; }
+        function interpColor(t) {
+          // red: #e74c3c (231,76,60), green: #2ecc71 (46,204,113)
+          const r1 = 231, g1 = 76, b1 = 60;
+          const r2 = 46, g2 = 204, b2 = 113;
+          const r = Math.round(lerp(r1, r2, t));
+          const g = Math.round(lerp(g1, g2, t));
+          const b = Math.round(lerp(b1, b2, t));
+          return { r, g, b };
+        }
+        function rgbToCss(c, a) { return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`; }
+        function getTextColorForBg(c) {
+          // Perceived luminance
+          const luminance = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+          return luminance > 0.6 ? '#000' : '#fff';
+        }
+
+        // Now render rows with colors
+        for (const r of rows) {
+          const displayPct = r.pct.toFixed(1);
+          const tr = document.createElement('tr');
+          tr.className = r.type === 'region' ? 'region-row' : 'district-row';
+          const nameTd = document.createElement('td'); nameTd.textContent = r.name; tr.appendChild(nameTd);
+          const pctTd = document.createElement('td'); pctTd.textContent = `${displayPct}% — ${r.withDate}`; tr.appendChild(pctTd);
+          const withoutTd = document.createElement('td'); withoutTd.textContent = r.withoutDate; tr.appendChild(withoutTd);
+
+          // Normalize t in [0,1] where 0 -> min (red), 1 -> max (green)
+          const t = (maxPct - minPct) === 0 ? 1 : ((r.pct - minPct) / (maxPct - minPct));
+          const col = interpColor(t);
+          // use a light alpha for background so table remains readable
+          tr.style.backgroundColor = rgbToCss(col, 0.18);
+          const textColor = getTextColorForBg(col);
+          tr.style.color = textColor;
+
+          tbody.appendChild(tr);
         }
 
         table.appendChild(tbody);
