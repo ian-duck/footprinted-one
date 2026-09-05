@@ -94,7 +94,7 @@ The statistics section SHALL include a table that shows aggregated counts for ea
 - **THEN** the "With Footprint" column shows the percentage and the nominal count in the format "{P}% — {N}" (e.g., "72.3% — 231")
 - **THEN** the "No Footprint" column shows the integer count of features missing or empty `Date` values
 
-#### Scenario: Accessibility and responsiveness
+#### Scenario: Responsiveness on narrow viewports
 - **WHEN** the table is displayed on narrow viewports
-- **THEN** it remains readable (horizontal scroll or stacked labels) and is keyboard accessible
+- **THEN** it remains readable (horizontal scroll or stacked labels)
 

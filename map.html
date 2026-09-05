@@ -16,17 +16,34 @@
         height: 100%;
         font-family: Arial, sans-serif;
       }
-      /* leave room for the 200px stats doughnut below the map */
+
+      /* Page grid: left column for stats, right column for map */
+      .page-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 0;
+        height: 100vh;
+      }
+
+      /* On narrow viewports stack with map on top */
+      @media (max-width: 720px) {
+        .page-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+        .stats-column { order: 2; }
+        .map-column { order: 1; }
+      }
+
       #map {
         width: 100%;
-        height: calc(100vh - 240px);
+        height: 100%;
       }
+
       #statsChart {
         width: 200px;
         height: 200px;
         display: block;
         margin: 0 0 1rem 0;
       }
+
       #regionalStats { margin-top: 1rem; overflow-x: auto; }
       #regionalStats table { width: auto; max-width: 100%; border-collapse: collapse; table-layout: auto; }
       #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; white-space: nowrap; }
@@ -41,14 +58,25 @@
     </style>
   </head>
   <body>
-    <div id="mapContainer">
-      <div id="map"></div>
-    </div>
+    <div class="page-grid">
+      <div class="stats-column" id="statsColumn">
+        <div id="statsContainer">
+          <h4>Statistics</h4>
+          <figure>
+            <canvas id="statsChart" width="200" height="200"></canvas>
+            <figcaption>Doughnut chart showing % with Date and nominal counts</figcaption>
+          </figure>
+          <!-- Placeholders for filters and tables (empty for now) -->
+          <div id="filtersPlaceholder">
+            <!-- Region / RegionDistrict filters go here (placeholder) -->
+          </div>
+          <div id="regionalStats"></div>
+        </div>
+      </div>
 
-    <div id="statsContainer">
-      <h4>Statistics</h4>
-      <canvas id="statsChart" width="200" height="200" aria-label="Doughnut chart of Date presence"></canvas>
-      <div id="regionalStats" aria-live="polite" aria-label="Regional statistics table"></div>
+      <div class="map-column" id="mapColumn">
+        <div id="map"></div>
+      </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -266,11 +294,17 @@
           }
 
           try { map.fitBounds(geoLayer.getBounds()); } catch (e) { console.warn('fitBounds failed', e); }
+          // ensure map tiles/layout recalc after container sizing
+          try { setTimeout(() => map.invalidateSize(), 200); } catch (e) { /* ignore */ }
         })
         .catch((error) => {
           console.error(error);
           alert('Could not load the GeoJSON file.');
         });
+    </script>
+    <script>
+      // Recalculate map size on window resize to prevent tile/misrender
+      window.addEventListener('resize', () => { try { setTimeout(() => map.invalidateSize(), 150); } catch (e) { /* ignore */ } });
     </script>
   </body>
 </html>
