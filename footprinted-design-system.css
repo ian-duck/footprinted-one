@@ -1,0 +1,265 @@
+/* ==========================================================================
+   Footprinted design system
+   Outdoor/adventure base + playful achievement accents
+   ========================================================================== */
+
+:root {
+  /* ---- Neutrals (structure, chrome) ---- */
+  --color-surface-0: #f7f6f2;   /* page background */
+  --color-surface-1: #ffffff;   /* cards, panels */
+  --color-surface-2: #f0efe9;   /* nested panels, map background */
+  --color-border: #dedcd3;
+  --color-border-strong: #b8b6ab;
+  --color-text-primary: #1e1e1c;
+  --color-text-secondary: #5f5e58;
+  --color-text-muted: #8b8a82;
+
+  /* ---- Green: progress / completion / structural success ---- */
+  --color-green-50:  #eaf3de;
+  --color-green-400: #639922;
+  --color-green-600: #3b6d11;
+  --color-green-900: #173404;
+
+  /* ---- Amber: achievement / gamified accents ONLY ----
+     Use for: progress ring fill, footprint "stamp" badges,
+     visited map pins, streaks/badges.
+     Do NOT use for: plain navigation, structural chrome,
+     "not yet done" states. */
+  --color-amber-50:  #faeeda;
+  --color-amber-200: #ef9f27;
+  --color-amber-600: #854f0b;
+  --color-amber-900: #412402;
+
+  /* ---- Danger/neutral-empty state ---- */
+  --color-empty-ring: var(--color-border-strong);
+
+  /* ---- Radii ---- */
+  --radius-sm: 6px;
+  --radius-card: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Spacing ---- */
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 24px;
+
+  /* ---- Typography ---- */
+  --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-size-body: 13px;
+  --font-size-title: 15px;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-0: #16150f;
+    --color-surface-1: #1f1e17;
+    --color-surface-2: #262419;
+    --color-border: #37352a;
+    --color-border-strong: #4c4a3c;
+    --color-text-primary: #f3f2ec;
+    --color-text-secondary: #b3b1a6;
+    --color-text-muted: #8b8a82;
+    --color-green-50: #1a2b0d;
+    --color-amber-50: #2c2110;
+  }
+}
+
+/* ---- Base ---- */
+body {
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+/* ---- Header / nav ---- */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--space-sm);
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.app-header__title {
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-medium);
+}
+
+.app-header__title .icon {
+  color: var(--color-amber-200);
+  margin-right: var(--space-xs);
+}
+
+.nav-pill {
+  font-size: 12px;
+  border: 0.5px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Reserve the filled amber pill for the ACTIVE tab, not routine nav */
+.nav-pill--active {
+  background: var(--color-amber-200);
+  color: var(--color-amber-900);
+  border-color: transparent;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ---- Layout ---- */
+.quest-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--space-sm);
+  align-items: stretch;
+}
+
+.quest-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ---- Cards ---- */
+.card {
+  background: var(--color-surface-2);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+}
+
+.card--accent {
+  background: var(--color-amber-50);
+}
+
+.card--grow {
+  flex: 1;
+}
+
+.card__title {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  margin: 0 0 var(--space-sm);
+}
+
+/* ---- Progress ring (amber = achievement) ---- */
+.progress-ring {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-sm);
+  /* set --progress on the element, 0-100 */
+  background: conic-gradient(
+    var(--color-green-400) 0 calc(var(--progress, 70) * 1%),
+    #d85c4b calc(var(--progress, 70) * 1%) 100%
+  );
+}
+
+.progress-ring__value {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-surface-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ---- Dropdowns (region / subregion) ---- */
+.dropdown {
+  width: 100%;
+  font-size: 12px;
+  border-radius: var(--radius-pill);
+  border: 0.5px solid var(--color-border-strong);
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  padding: 6px 12px;
+  margin-bottom: var(--space-xs);
+}
+
+/* ---- Footprint list rows ---- */
+.footprint-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.footprint-row__label {
+  color: var(--color-text-primary);
+}
+
+.footprint-row--pending .footprint-row__label {
+  color: var(--color-text-secondary);
+}
+
+/* Stamped / completed: amber achievement badge */
+.badge-stamp {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-amber-50);
+  color: var(--color-amber-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Not yet visited: neutral dashed outline, no color meaning */
+.badge-pending {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px dashed var(--color-empty-ring);
+  flex-shrink: 0;
+}
+
+/* ---- Map panel ---- */
+.map-panel {
+  background: var(--color-surface-2);
+  border-radius: var(--radius-card);
+  height: 100%;
+  min-height: 520px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-panel__placeholder-icon {
+  font-size: 30px;
+  color: var(--color-text-muted);
+}
+
+.map-pin {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Visited place pin: amber achievement marker */
+.map-pin--visited {
+  background: var(--color-amber-50);
+  color: var(--color-amber-900);
+}
+
+/* Unvisited place pin: neutral, no color meaning */
+.map-pin--pending {
+  border: 2px dashed var(--color-empty-ring);
+  background: transparent;
+}

@@ -3,308 +3,80 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Atlas SK Map</title>
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
-    <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        font-family: Arial, sans-serif;
-      }
-
-      /* Page grid: left column for stats, right column for map */
-      .page-grid {
-        display: grid;
-        grid-template-columns: 320px 1fr;
-        gap: 0;
-        height: 100vh;
-      }
-
-      /* On narrow viewports stack with map on top */
-      @media (max-width: 720px) {
-        .page-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
-        .stats-column { order: 2; }
-        .map-column { order: 1; }
-      }
-
-      #map {
-        width: 100%;
-        height: 100%;
-      }
-
-      #statsChart {
-        width: 200px;
-        height: 200px;
-        display: block;
-        margin: 0 0 1rem 0;
-      }
-
-      #regionalStats { margin-top: 1rem; overflow-x: auto; }
-      #regionalStats table { width: auto; max-width: 100%; border-collapse: collapse; table-layout: auto; }
-      #regionalStats th, #regionalStats td { padding: 0.25rem 0.5rem; border-bottom: 1px solid #ddd; text-align: left; white-space: nowrap; }
-      #regionalStats th, #regionalStats td { color: #000; }
-      .region-row { font-weight: bold; background: #f8f8f8; }
-      .district-row td:first-child { padding-left: 1rem; }
-      .leaflet-popup-content-wrapper,
-      .leaflet-popup-content {
-        font-size: 13px;
-      }
-      #statsContainer { padding: 1rem; }
-    </style>
+    <title>Footprinted.eu</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="./footprinted-design-system.css" />
+    <link rel="stylesheet" href="./map-page.css" />
   </head>
   <body>
-    <div class="page-grid">
-      <div class="stats-column" id="statsColumn">
-        <div id="statsContainer">
-          <h4>Statistics</h4>
-          <figure>
-            <canvas id="statsChart" width="200" height="200"></canvas>
-            <figcaption>Doughnut chart showing % with Date and nominal counts</figcaption>
-          </figure>
-          <!-- Placeholders for filters and tables (empty for now) -->
-          <div id="filtersPlaceholder">
-            <!-- Region / RegionDistrict filters go here (placeholder) -->
-          </div>
-          <div id="regionalStats"></div>
+    <div class="page-shell">
+      <header class="app-header">
+        <div class="app-header__inner">
+          <button class="nav-pill" type="button">Footprinted.eu</button>
+          <nav class="nav-group" aria-label="Main navigation">
+            <button class="nav-pill" type="button">Quests</button>
+            <button class="nav-pill" type="button">Profile</button>
+          </nav>
         </div>
-      </div>
+      </header>
 
-      <div class="map-column" id="mapColumn">
-        <div id="map"></div>
-      </div>
+      <main class="quest-layout">
+        <aside class="quest-sidebar">
+          <section class="panel-card" aria-label="Quest progress">
+            <div class="quest-card-header">
+              <h2>Slovensko 1978</h2>
+            </div>
+
+            <div id="quest-progress-ring" class="progress-ring" style="--progress: 0;" aria-label="0 percent complete">
+              <div id="quest-progress-value" class="progress-ring__value">0%</div>
+            </div>
+
+            <select id="region-select" class="dropdown" aria-label="Region select">
+              <option value="All">All</option>
+            </select>
+            <select id="district-select" class="dropdown" aria-label="Area select">
+              <option value="All">All</option>
+            </select>
+          </section>
+
+          <section class="panel-card" aria-label="Recently footprinted places">
+            <div class="list-block">
+              <h3 class="list-title">Recently footprinted</h3>
+              <div class="footprint-list">
+                <div class="footprint-row">
+                  <span class="badge-stamp" aria-hidden="true">✓</span>
+                  <span class="footprint-row__label">Piazza del Duomo</span>
+                </div>
+                <div class="footprint-row">
+                  <span class="badge-stamp" aria-hidden="true">✓</span>
+                  <span class="footprint-row__label">Ponte Vecchio</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel-card" aria-label="Pending locations">
+            <div class="list-block">
+              <h3 class="list-title">Not footprinted yet</h3>
+              <div class="footprint-list">
+                <div class="footprint-row footprint-row--pending">
+                  <span class="badge-pending" aria-hidden="true"></span>
+                  <span class="footprint-row__label">Giardino di Boboli</span>
+                </div>
+                <div class="footprint-row footprint-row--pending">
+                  <span class="badge-pending" aria-hidden="true"></span>
+                  <span class="footprint-row__label">Mercato Centrale</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="map-panel" aria-label="Map preview">
+          <div id="map" aria-label="Map with footprint markers"></div>
+        </section>
+      </main>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-    <script>
-      const map = L.map("map").setView([48.7, 19.7], 7);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "&copy; OpenStreetMap contributors"
-      }).addTo(map);
-
-      function hasDate(feature) {
-        const dateValue = feature?.properties?.Date;
-        return typeof dateValue === "string" && dateValue.trim() !== "";
-      }
-
-      let geoLayer;
-      let statsChart = null;
-
-      function computeStats(geojson) {
-        const features = geojson.features || [];
-        let withDate = 0;
-        let withoutDate = 0;
-        for (const f of features) {
-          if (hasDate(f)) withDate++; else withoutDate++;
-        }
-        return {withDate, withoutDate};
-      }
-
-      function renderChart(stats) {
-        const total = stats.withDate + stats.withoutDate;
-        const data = {
-          labels: ['With Footprint', 'No Footprint'],
-          datasets: [{
-            data: [stats.withDate, stats.withoutDate],
-            backgroundColor: ['#2ecc71', '#e74c3c']
-          }]
-        };
-
-        // register datalabels plugin if available
-        if (window.Chart && window.ChartDataLabels) {
-          try { Chart.register(ChartDataLabels); } catch (e) { /* already registered */ }
-        }
-
-        if (statsChart) {
-          statsChart.data = data;
-          statsChart.update();
-          return;
-        }
-
-        try {
-          const canvas = document.getElementById('statsChart');
-          const ctx2d = canvas.getContext ? canvas.getContext('2d') : null;
-          statsChart = new Chart(ctx2d, {
-            type: 'doughnut',
-            data: data,
-            options: {
-              responsive: false,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false },
-                datalabels: {
-                  color: '#000000',
-                  formatter: function(value, ctx) {
-                    const dataArr = ctx.chart.data.datasets[0].data;
-                    const sum = dataArr.reduce((a, b) => a + b, 0) || 0;
-                    const pct = sum ? (value / sum * 100).toFixed(1) : '0.0';
-                    return `${pct}% — ${value}`;
-                  },
-                  font: { weight: 'bold', size: 12 }
-                }
-              }
-            }
-          });
-        } catch (e) {
-          console.error('Chart init failed', e);
-        }
-      }
-
-      function computeRegionalStats(features) {
-        const regionsMap = new Map();
-        for (const f of features) {
-          const props = f.properties || {};
-          const region = props.Region || 'Unknown';
-          const district = props.RegionDistrict || 'Unknown';
-          const has = hasDate(f);
-
-          if (!regionsMap.has(region)) {
-            regionsMap.set(region, { name: region, total: 0, withDate: 0, withoutDate: 0, districts: new Map() });
-          }
-          const r = regionsMap.get(region);
-          r.total += 1;
-          if (has) r.withDate += 1; else r.withoutDate += 1;
-
-          if (!r.districts.has(district)) {
-            r.districts.set(district, { name: district, total: 0, withDate: 0, withoutDate: 0 });
-          }
-          const d = r.districts.get(district);
-          d.total += 1;
-          if (has) d.withDate += 1; else d.withoutDate += 1;
-        }
-
-        const regions = Array.from(regionsMap.values()).map(r => {
-          const districts = Array.from(r.districts.values()).map(d => ({ name: d.name, total: d.total, withDate: d.withDate, withoutDate: d.withoutDate }));
-          districts.sort((a, b) => a.name.localeCompare(b.name));
-          return { name: r.name, total: r.total, withDate: r.withDate, withoutDate: r.withoutDate, districts };
-        });
-        regions.sort((a, b) => a.name.localeCompare(b.name));
-        return regions;
-      }
-
-      function renderRegionalStatsTable(regions, container) {
-        if (!container) return;
-        container.innerHTML = '';
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Name</th><th>% with Date</th><th># without Date</th></tr>';
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        // Build a flat list of rows with numeric percentages so we can compute
-        // min/max across all rows (regions + districts) for gradient coloring.
-        const rows = [];
-        for (const region of regions) {
-          const pct = region.total ? (region.withDate / region.total * 100) : 0;
-          rows.push({ type: 'region', name: region.name, pct, withDate: region.withDate, withoutDate: region.withoutDate, region });
-          for (const district of region.districts) {
-            const dpct = district.total ? (district.withDate / district.total * 100) : 0;
-            rows.push({ type: 'district', name: district.name, pct: dpct, withDate: district.withDate, withoutDate: district.withoutDate, district });
-          }
-        }
-
-        // Determine min/max percentage
-        const pctValues = rows.map(r => r.pct);
-        const minPct = Math.min(...pctValues);
-        const maxPct = Math.max(...pctValues);
-
-        // Helper: interpolate between red and green
-        function lerp(a, b, t) { return a + (b - a) * t; }
-        function interpColor(t) {
-          // red: #e74c3c (231,76,60), green: #2ecc71 (46,204,113)
-          const r1 = 231, g1 = 76, b1 = 60;
-          const r2 = 46, g2 = 204, b2 = 113;
-          const r = Math.round(lerp(r1, r2, t));
-          const g = Math.round(lerp(g1, g2, t));
-          const b = Math.round(lerp(b1, b2, t));
-          return { r, g, b };
-        }
-        function rgbToCss(c, a) { return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`; }
-        // text will be black for readability
-        function getTextColorForBg(c) { return '#000'; }
-
-        // Now render rows with colors
-        for (const r of rows) {
-          const displayPct = r.pct.toFixed(1);
-          const tr = document.createElement('tr');
-          tr.className = r.type === 'region' ? 'region-row' : 'district-row';
-          const nameTd = document.createElement('td'); nameTd.textContent = r.name; tr.appendChild(nameTd);
-          const pctTd = document.createElement('td'); pctTd.textContent = `${displayPct}%`; tr.appendChild(pctTd);
-          const withoutTd = document.createElement('td'); withoutTd.textContent = r.withoutDate; tr.appendChild(withoutTd);
-
-          // Normalize t in [0,1] where 0 -> min (red), 1 -> max (green)
-          const t = (maxPct - minPct) === 0 ? 1 : ((r.pct - minPct) / (maxPct - minPct));
-          const col = interpColor(t);
-          // use stronger alpha for better contrast and force black text
-          tr.style.backgroundColor = rgbToCss(col, 0.32);
-          tr.style.color = '#000';
-
-          tbody.appendChild(tr);
-        }
-
-        table.appendChild(tbody);
-        container.appendChild(table);
-      }
-
-      // Render stats below the map; no toggle. Chart will be initialized after GeoJSON is loaded.
-
-      fetch('atlas_sk.geojson')
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Failed to load GeoJSON: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((geojson) => {
-          window.__loadedGeoJSON = geojson;
-          geoLayer = L.geoJSON(geojson, {
-            pointToLayer: function (feature, latlng) {
-              const color = hasDate(feature) ? '#2ecc71' : '#e74c3c';
-              return L.circleMarker(latlng, { radius: 6, color: '#ffffff', weight: 1, fillColor: color, fillOpacity: 0.95 });
-            },
-            onEachFeature: function (feature, layerItem) {
-              const props = feature.properties || {};
-              const place = props.Place || 'Unknown place';
-              const date = props.Date && String(props.Date).trim() !== '' ? props.Date : 'No date';
-              const region = props.Region || 'N/A';
-              const sector = props.Sector || 'N/A';
-              layerItem.bindPopup(`<strong>${place}</strong><br>Date: ${date}<br>Region: ${region}<br>Sector: ${sector}`);
-            }
-          }).addTo(map);
-
-          // compute and render stats below the map
-          try {
-            const stats = computeStats(geojson);
-            renderChart(stats);
-          } catch (e) {
-            console.error('Stats render failed', e);
-          }
-
-          try {
-            const regions = computeRegionalStats(geojson.features || []);
-            renderRegionalStatsTable(regions, document.getElementById('regionalStats'));
-          } catch (e) {
-            console.error('Regional stats render failed', e);
-          }
-
-          try { map.fitBounds(geoLayer.getBounds()); } catch (e) { console.warn('fitBounds failed', e); }
-          // ensure map tiles/layout recalc after container sizing
-          try { setTimeout(() => map.invalidateSize(), 200); } catch (e) { /* ignore */ }
-        })
-        .catch((error) => {
-          console.error(error);
-          alert('Could not load the GeoJSON file.');
-        });
-    </script>
-    <script>
-      // Recalculate map size on window resize to prevent tile/misrender
-      window.addEventListener('resize', () => { try { setTimeout(() => map.invalidateSize(), 150); } catch (e) { /* ignore */ } });
-    </script>
-  </body>
-</html>
+    <script src="./scripts/map.js"></script>

@@ -20,9 +20,10 @@
  - [x] Testing & verification
   - Manual test: confirmed `atlas_sk.geojson` exists and page references remain correct; basic sanity checks of included scripts and chart/canvas preserved.
 
- - [x] Commit & document
+- [x] Commit & document
   - Commit changes with message: "ui: align leaflet map page layout with wireframe (ui-layout-wireframe)"
   - Update any README or docs that reference the map page layout (optional)
+   - Commit: done (git commit)
 
 Notes:
 - Keep Region/RegionDistrict filter controls and aggregation table present but empty placeholders; actual filtering and population is out of scope for this change.
