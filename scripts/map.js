@@ -5,6 +5,7 @@
     allFeatures: [],
     selectedRegion: 'All',
     selectedDistrict: 'All',
+    selectedStatus: 'All',
     regionToDistricts: new Map(),
     activeLayer: null
   };
@@ -69,8 +70,21 @@
       const props = feature && feature.properties ? feature.properties : {};
       const regionMatches = state.selectedRegion === 'All' || props.Region === state.selectedRegion;
       const districtMatches = state.selectedDistrict === 'All' || props.RegionDistrict === state.selectedDistrict;
-      return regionMatches && districtMatches;
+      const isVisited = hasFilledDate(feature);
+      const statusMatches = state.selectedStatus === 'All'
+        || (state.selectedStatus === 'visited' && isVisited)
+        || (state.selectedStatus === 'missing' && !isVisited);
+
+      return regionMatches && districtMatches && statusMatches;
     });
+  }
+
+  function toggleStatusFilter(nextStatus) {
+    if (state.selectedStatus === nextStatus) {
+      state.selectedStatus = 'All';
+    } else {
+      state.selectedStatus = nextStatus;
+    }
   }
 
   function updateDistrictOptions() {
@@ -183,10 +197,101 @@
     }
   }
 
+  function getRecentVisitedPlaces(features) {
+    const validItems = features
+      .filter((feature) => hasFilledDate(feature))
+      .filter((feature) => {
+        const dateString = feature && feature.properties ? feature.properties.Date : null;
+        return typeof dateString === 'string' && dateString.trim() !== '' && !Number.isNaN(new Date(dateString).getTime());
+      })
+      .sort((a, b) => new Date(b.properties.Date) - new Date(a.properties.Date));
+
+    return validItems.slice(0, 3);
+  }
+
+  function getPendingPlaces(features) {
+    return features
+      .filter((feature) => !hasFilledDate(feature))
+      .slice(0, 10);
+  }
+
+  function renderRecentPlaces(features) {
+    const list = document.querySelector('.footprint-list--recent');
+    if (!list) return;
+
+    const recentPlaces = getRecentVisitedPlaces(features);
+
+    if (recentPlaces.length === 0) {
+      list.innerHTML = '<div class="footprint-row"><span class="badge-pending" aria-hidden="true"></span><span class="footprint-row__label">No recent places</span></div>';
+      return;
+    }
+
+    list.innerHTML = recentPlaces
+      .map((feature) => {
+        const props = feature && feature.properties ? feature.properties : {};
+        const name = props.Place || 'Unknown place';
+        const date = props.Date ? String(props.Date).trim() : 'Unknown';
+        return `
+          <div class="footprint-row">
+            <span class="badge-stamp" aria-hidden="true">✓</span>
+            <span class="footprint-row__label">${name}</span>
+            <span class="footprint-row__date">${date}</span>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  function renderPendingPlaces(features) {
+    const list = document.querySelector('.footprint-list--pending');
+    if (!list) return;
+
+    const pendingPlaces = getPendingPlaces(features);
+
+    if (pendingPlaces.length === 0) {
+      list.innerHTML = '<div class="footprint-row footprint-row--pending"><span class="badge-pending" aria-hidden="true"></span><span class="footprint-row__label">No pending places</span></div>';
+      return;
+    }
+
+    list.innerHTML = pendingPlaces
+      .map((feature) => {
+        const props = feature && feature.properties ? feature.properties : {};
+        const name = props.Place || 'Unknown place';
+        return `
+          <div class="footprint-row footprint-row--pending">
+            <span class="badge-pending" aria-hidden="true"></span>
+            <span class="footprint-row__label">${name}</span>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
   function applyFilters() {
     const filteredFeatures = getFilteredFeatures();
     updateProgressRing(filteredFeatures);
     renderMap(filteredFeatures);
+    renderRecentPlaces(filteredFeatures);
+    renderPendingPlaces(filteredFeatures);
+  }
+
+  function handleRingClick(event) {
+    const ring = document.getElementById('quest-progress-ring');
+    if (!ring) return;
+
+    const rect = ring.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const x = event.clientX - centerX;
+    const y = event.clientY - centerY;
+    const angle = (Math.atan2(y, x) * 180) / Math.PI + 90;
+    const normalizedAngle = (angle + 360) % 360;
+    const progress = Number(ring.style.getPropertyValue('--progress')) || 0;
+    const filledDegrees = progress * 3.6;
+    const isVisitedClick = normalizedAngle <= filledDegrees;
+
+    toggleStatusFilter(isVisitedClick ? 'visited' : 'missing');
+    applyFilters();
   }
 
   function initMap() {
@@ -203,6 +308,7 @@
 
     const regionSelect = document.getElementById('region-select');
     const districtSelect = document.getElementById('district-select');
+    const ring = document.getElementById('quest-progress-ring');
 
     if (regionSelect) {
       regionSelect.addEventListener('change', (event) => {
@@ -218,6 +324,11 @@
         state.selectedDistrict = event.target.value;
         applyFilters();
       });
+    }
+
+    if (ring) {
+      ring.addEventListener('click', handleRingClick);
+      ring.style.cursor = 'pointer';
     }
 
     fetch('atlas_sk.geojson')

@@ -150,13 +150,14 @@ body {
 
 /* ---- Progress ring (amber = achievement) ---- */
 .progress-ring {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--space-sm);
+  cursor: pointer;
   /* set --progress on the element, 0-100 */
   background: conic-gradient(
     var(--color-green-400) 0 calc(var(--progress, 70) * 1%),
@@ -188,15 +189,36 @@ body {
 }
 
 /* ---- Footprint list rows ---- */
+.footprint-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .footprint-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-sm);
   margin-bottom: var(--space-xs);
+  font-size: 11px;
+}
+
+.footprint-list--pending .footprint-row {
+  grid-template-columns: 26px minmax(0, 1fr);
 }
 
 .footprint-row__label {
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footprint-row__date {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  justify-self: end;
 }
 
 .footprint-row--pending .footprint-row__label {
