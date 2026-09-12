@@ -85,16 +85,6 @@ body {
   border-bottom: 0.5px solid var(--color-border);
 }
 
-.app-header__title {
-  font-size: var(--font-size-title);
-  font-weight: var(--font-weight-medium);
-}
-
-.app-header__title .icon {
-  color: var(--color-amber-200);
-  margin-right: var(--space-xs);
-}
-
 .nav-pill {
   font-size: 12px;
   border: 0.5px solid var(--color-border-strong);
@@ -103,14 +93,6 @@ body {
   color: var(--color-text-secondary);
   background: transparent;
   cursor: pointer;
-}
-
-/* Reserve the filled amber pill for the ACTIVE tab, not routine nav */
-.nav-pill--active {
-  background: var(--color-amber-200);
-  color: var(--color-amber-900);
-  border-color: transparent;
-  font-weight: var(--font-weight-medium);
 }
 
 /* ---- Layout ---- */
@@ -128,27 +110,14 @@ body {
 }
 
 /* ---- Cards ---- */
-.card {
-  background: var(--color-surface-2);
+.panel-card {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  padding: var(--space-md);
+  padding: var(--space-md) var(--space-lg) var(--space-md);
 }
 
-.card--accent {
-  background: var(--color-amber-50);
-}
-
-.card--grow {
-  flex: 1;
-}
-
-.card__title {
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-medium);
-  margin: 0 0 var(--space-sm);
-}
-
-/* ---- Progress ring (amber = achievement) ---- */
+/* ---- Progress ring (matches completed/missing marker coding) ---- */
 .progress-ring {
   width: 120px;
   height: 120px;
@@ -158,11 +127,24 @@ body {
   justify-content: center;
   margin: 0 auto var(--space-sm);
   cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   /* set --progress on the element, 0-100 */
   background: conic-gradient(
-    var(--color-green-400) 0 calc(var(--progress, 70) * 1%),
-    #d85c4b calc(var(--progress, 70) * 1%) 100%
+    var(--color-green-400) 0 calc(var(--progress, 0) * 1%),
+    #d85c4b calc(var(--progress, 0) * 1%) 100%
   );
+}
+
+.progress-ring.is-active {
+  border-color: var(--color-green-400);
+  box-shadow: 0 0 0 4px rgba(99, 153, 34, 0.18);
+  transform: translateY(-1px);
+}
+
+.progress-ring:focus-visible {
+  outline: 3px solid var(--color-green-400);
+  outline-offset: 3px;
 }
 
 .progress-ring__value {
@@ -257,31 +239,4 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.map-panel__placeholder-icon {
-  font-size: 30px;
-  color: var(--color-text-muted);
-}
-
-.map-pin {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Visited place pin: amber achievement marker */
-.map-pin--visited {
-  background: var(--color-amber-50);
-  color: var(--color-amber-900);
-}
-
-/* Unvisited place pin: neutral, no color meaning */
-.map-pin--pending {
-  border: 2px dashed var(--color-empty-ring);
-  background: transparent;
 }
